@@ -1,4 +1,4 @@
-# The environment file is missing but its pretty obvious as to what it should container
+# The environment file is missing but its pretty obvious as to what it should contain
 # This stack is deployed using Portainer CE
 
 services:
