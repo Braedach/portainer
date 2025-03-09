@@ -1,0 +1,81 @@
+# The environment file is missing but its pretty obvious as to what it should container
+# This stack is deployed using Portainer CE
+
+services:
+
+  db:
+    image: mysql:8.0
+    container_name: mysql8
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: "Australia/Perth"
+    volumes:
+      - /srv/ghost/mysql:/var/lib/mysql:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h mysql8 -u root -p${MYSQL_ROOT_PASSWORD} --silent; exit $?"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - ghost
+
+  ghost:
+    image: ghost:latest
+    container_name: ghost
+    restart: always
+    ports:
+      - 2368:2368
+    environment:
+      database__client: mysql
+      database__connection__host: db
+      database__connection__user: ${USER}
+      database__connection__password: ${MYSQL_ROOT_PASSWORD}
+      database__connection__database: ghost
+      url: http://www.braedach.com
+      TZ: "Australia/Perth"
+      mail__transport: SMTP
+      mail__from: "Braedach - Always Learning <ghost@braedach.com>"
+      mail__options__service: Mailgun
+      mail__options__host: "smtp.mailgun.org"
+      mail__options__port: 465
+      mail__options__secureConnection: "true"
+      mail__options__auth__user: $(GHOST_MAIL_USER)
+      mail__options__auth__pass: $(GHOST_MAIL_PASS)
+      
+    volumes:
+      - /srv/ghost/content:/var/lib/ghost/content:rw
+      - /etc/localtime:/etc/localtime:ro
+      - /etc/timezone:/etc/timezone:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ghost
+
+  debian-test:
+    # Debian test container install the following if requiring interaction with mysql
+    # apt-get install -y default-mysql-client
+    # doing this allows for network testing along with interaction with the database
+    image: debian:latest
+    container_name: debian-test
+    command: ["sleep", "3600"] # Keeps the container running for testing purposes
+    environment:
+      - DATABASE_CONNECTION_HOST= db
+      - DATABASE-CONNECTION_USER= ${USER}
+      - DATABASE_CONNECTION_PASSWORD= ${MYSQL_ROOT_PASSWORD}
+      - DATABASE_CONNECTION_DATABASE= ghost
+      - MYSQL_ROOT_PASSWORD= ${MYSQL_ROOT_PASSWORD}
+    restart: always
+    networks:
+      - ghost
+
+networks:
+  ghost:
+    name: ghost
+    driver: bridge
+    enable_ipv6: false
+
