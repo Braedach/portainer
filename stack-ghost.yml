@@ -35,7 +35,8 @@ services:
       database__connection__user: ${USER}
       database__connection__password: ${MYSQL_ROOT_PASSWORD}
       database__connection__database: ghost
-      url: http://www.braedach.com
+      # The URL MUST be set to https instead of http
+      url: https://www.braedach.com
       TZ: "Australia/Perth"
       mail__transport: SMTP
       mail__from: "Braedach - Always Learning <ghost@braedach.com>"
